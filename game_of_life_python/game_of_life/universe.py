@@ -8,8 +8,7 @@ def get_all_possible_neighbours_for(cell):
 
 class Universe:
     def __init__(self, cells=None):
-        if cells is None:
-            cells = set()
+        cells = cells or set()
         self._cells = set(cells)
 
     def __len__(self):
@@ -41,7 +40,6 @@ class Universe:
         ).union(reproduced_cells)
 
     def has_cells(self, cells=None) -> bool:
-        if cells is None:
-            cells = set()
+        cells = cells or set()
         cells = set(cells)
         return len(cells) == len(cells.intersection(self._cells))
