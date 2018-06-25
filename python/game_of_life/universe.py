@@ -1,3 +1,7 @@
+from functools import reduce
+from typing import Set, Tuple
+
+
 def get_all_possible_neighbours_for(cell):
     x, y = cell
     return {(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
@@ -8,38 +12,44 @@ def get_all_possible_neighbours_for(cell):
 
 class Universe:
     def __init__(self, cells=None):
-        cells = cells or set()
-        self._cells = set(cells)
+        self._cells: Set[Tuple[int, int]] = set(cells or [])
 
     def __len__(self):
         return len(self._cells)
 
-    def _actual_neighbours_for(self, cell) -> set:
-        return self._cells.intersection(get_all_possible_neighbours_for(cell))
+    def __add__(self, cell: set) -> 'Universe':
+        new_universe = Universe(self._cells)
+        new_universe._cells.add(cell)
+        return new_universe
 
-    def _potential_reproducible_neighbours(self) -> set:
-        all_possible_neighbouring_cells = set()
-        [all_possible_neighbouring_cells.update(set(get_all_possible_neighbours_for(cell))) for cell in self._cells]
-        return all_possible_neighbouring_cells
+    def __str__(self):
+        return str(self._cells)
 
-    def _compute_survivors(self):
-        return (cell for cell in self._cells if
-                len(self._actual_neighbours_for(cell)) == 2 or len(self._actual_neighbours_for(cell)) == 3)
+    def __eq__(self, other: 'Universe'):
+        return self._cells == other._cells if type(other) == Universe else self._cells == other
 
-    def _compute_reproductions(self, potential_reproducible_neighbours):
-        return (cell
-                for cell in potential_reproducible_neighbours if len(self._actual_neighbours_for(cell)) == 3)
+    def tick_generation(self) -> 'Universe':
+        def survival_condition(cell_count: int) -> bool:
+            return 2 <= cell_count <= 3
 
-    def increment_generation(self):
-        potential_reproducible_neighbours = self._potential_reproducible_neighbours()
-        reproduced_cells = set(
-            self._compute_reproductions(potential_reproducible_neighbours)
+        def reproduction_condition(cell_count: int) -> bool:
+            return cell_count == 3
+
+        new_universe_dead_or_alive = self._tick_for_alive_neighbours(survival_condition)
+        new_universe_reproduced = self._tick_for_reproduction(reproduction_condition)
+        return Universe(new_universe_dead_or_alive._cells.union(new_universe_reproduced._cells))
+
+    def _compute_alive_neighbours(self, cell: tuple) -> int:
+        return len(get_all_possible_neighbours_for(cell).intersection(self._cells))
+
+    def _tick_for_alive_neighbours(self, condition):
+        return Universe([cell for cell in self._cells if condition(self._compute_alive_neighbours(cell))])
+
+    def _tick_for_reproduction(self, condition):
+        potential_neighbours_of_alive_cells = reduce(
+            lambda x, y: x.union(y),
+            [get_all_possible_neighbours_for(cell) for cell in self._cells]
         )
-        self._cells = set(
-            self._compute_survivors()
-        ).union(reproduced_cells)
-
-    def has_cells(self, cells=None) -> bool:
-        cells = cells or set()
-        cells = set(cells)
-        return len(cells) == len(cells.intersection(self._cells))
+        return Universe(
+            [cell for cell in potential_neighbours_of_alive_cells if condition(self._compute_alive_neighbours(cell))]
+        )
