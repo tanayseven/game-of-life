@@ -1,5 +1,3 @@
-import pytest
-
 from game_of_life.universe import Universe
 
 
