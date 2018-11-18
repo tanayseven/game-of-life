@@ -10,6 +10,14 @@ def get_all_possible_neighbours_for(cell):
             }
 
 
+def survival_rule(neighbour_count: int) -> bool:
+    return 2 <= neighbour_count <= 3
+
+
+def reproduction_rule(neighbour_count: int) -> bool:
+    return neighbour_count == 3
+
+
 class Universe:
     def __init__(self, cells=None):
         self._cells: Set[Tuple[int, int]] = set(cells or [])
@@ -29,27 +37,16 @@ class Universe:
         return self._cells == other._cells if type(other) == Universe else self._cells == other
 
     def tick_generation(self) -> 'Universe':
-        def survival_condition(cell_count: int) -> bool:
-            return 2 <= cell_count <= 3
-
-        def reproduction_condition(cell_count: int) -> bool:
-            return cell_count == 3
-
-        new_universe_dead_or_alive = self._tick_for_alive_neighbours(survival_condition)
-        new_universe_reproduced = self._tick_for_reproduction(reproduction_condition)
+        new_universe_dead_or_alive = self._activate_cells(survival_rule, self._cells)
+        potential_neighbours_of_alive_cells = reduce(
+            lambda x, y: x.union(y),
+            [get_all_possible_neighbours_for(cell) for cell in self._cells]
+        )
+        new_universe_reproduced = self._activate_cells(reproduction_rule, potential_neighbours_of_alive_cells)
         return Universe(new_universe_dead_or_alive._cells.union(new_universe_reproduced._cells))
 
     def _compute_alive_neighbours(self, cell: tuple) -> int:
         return len(get_all_possible_neighbours_for(cell).intersection(self._cells))
 
-    def _tick_for_alive_neighbours(self, condition):
-        return Universe([cell for cell in self._cells if condition(self._compute_alive_neighbours(cell))])
-
-    def _tick_for_reproduction(self, condition):
-        potential_neighbours_of_alive_cells = reduce(
-            lambda x, y: x.union(y),
-            [get_all_possible_neighbours_for(cell) for cell in self._cells]
-        )
-        return Universe(
-            [cell for cell in potential_neighbours_of_alive_cells if condition(self._compute_alive_neighbours(cell))]
-        )
+    def _activate_cells(self, rule, cells):
+        return Universe([cell for cell in cells if rule(self._compute_alive_neighbours(cell))])
