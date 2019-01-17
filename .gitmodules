@@ -1,0 +1,3 @@
+[submodule "golang"]
+	path = golang
+	url = git@github.com:tanayseven/game-of-life-golang.git
