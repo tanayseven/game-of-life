@@ -8,6 +8,7 @@ Feel free to send pull requests with your own implementations in different langu
 
 1. [Python](/python)
 2. [Go](/golang)
+3. [Clojure](/clojure)
 
 Input and output format
 -----------------------

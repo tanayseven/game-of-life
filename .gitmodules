@@ -1,3 +1,6 @@
 [submodule "golang"]
 	path = golang
 	url = git@github.com:tanayseven/game-of-life-golang.git
+[submodule "clojure"]
+	path = clojure
+	url = git@github.com:tanayseven/game-of-life-clojure.git
